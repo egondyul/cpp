@@ -68,13 +68,13 @@ void read_text(std::ifstream& in, Words& dictionary)
 		std::transform(word.begin(), word.end(), word.begin(), ::toupper);
 		Words[word]++;
 		}*/
-		std::string text{ std::istreambuf_iterator<char>{in},{} };                 //считываем файл в объект типа string.
-																				   //подготовка к обработке текста
-		std::regex word("[^[:punct:][:space:][:digit:]]+");                                  //ищем все, что ограничено пробелами или знаками пунктуации.
-		auto begin = std::sregex_token_iterator{ text.begin(), text.end(), word };  //итератор доступа к частичным совпадениям(х.з. как по русски).
-		auto end = std::sregex_token_iterator{};                                  //то-же, только установлен на конец последовательности.
-																					//составление словаря
-		//std::map<std::string, int> dictio;                                            //словарь.
+		std::string text{ std::istreambuf_iterator<char>{in},{} };                 //Г±Г·ГЁГІГ»ГўГ ГҐГ¬ ГґГ Г©Г« Гў Г®ГЎГєГҐГЄГІ ГІГЁГЇГ  string.
+																				   //ГЇГ®Г¤ГЈГ®ГІГ®ГўГЄГ  ГЄ Г®ГЎГ°Г ГЎГ®ГІГЄГҐ ГІГҐГЄГ±ГІГ 
+		std::regex word("[^[:punct:][:space:][:digit:]]+");                                  //ГЁГ№ГҐГ¬ ГўГ±ГҐ, Г·ГІГ® Г®ГЈГ°Г Г­ГЁГ·ГҐГ­Г® ГЇГ°Г®ГЎГҐГ«Г Г¬ГЁ ГЁГ«ГЁ Г§Г­Г ГЄГ Г¬ГЁ ГЇГіГ­ГЄГІГіГ Г¶ГЁГЁ.
+		auto begin = std::sregex_token_iterator{ text.begin(), text.end(), word };  //ГЁГІГҐГ°Г ГІГ®Г° Г¤Г®Г±ГІГіГЇГ  ГЄ Г·Г Г±ГІГЁГ·Г­Г»Г¬ Г±Г®ГўГЇГ Г¤ГҐГ­ГЁГїГ¬(Гµ.Г§. ГЄГ ГЄ ГЇГ® Г°ГіГ±Г±ГЄГЁ).
+		auto end = std::sregex_token_iterator{};                                  //ГІГ®-Г¦ГҐ, ГІГ®Г«ГјГЄГ® ГіГ±ГІГ Г­Г®ГўГ«ГҐГ­ Г­Г  ГЄГ®Г­ГҐГ¶ ГЇГ®Г±Г«ГҐГ¤Г®ГўГ ГІГҐГ«ГјГ­Г®Г±ГІГЁ.
+																					//Г±Г®Г±ГІГ ГўГ«ГҐГ­ГЁГҐ Г±Г«Г®ГўГ Г°Гї
+		//std::map<std::string, int> dictio;                                            //Г±Г«Г®ГўГ Г°Гј.
 		for (; begin != end; ++begin)
 			++dictionary[begin->str()];
 
