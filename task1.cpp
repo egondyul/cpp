@@ -49,8 +49,8 @@ void Text::read_text(std::string& nm, Words& dictionary)
 	if (in)
 	{		
 		std::string text{ std::istreambuf_iterator<char>{in},{} };
-		std::regex word("[^[:punct:][:space:][:digit:]]+"); //ищем все, что ограничено пробелами или знаками пунктуации.
-		auto begin = std::sregex_token_iterator{ text.begin(), text.end(), word };  //итератор доступа 
+		std::regex word("[^[:punct:][:space:][:digit:]]+"); //ГЁГ№ГҐГ¬ ГўГ±ГҐ, Г·ГІГ® Г®ГЈГ°Г Г­ГЁГ·ГҐГ­Г® ГЇГ°Г®ГЎГҐГ«Г Г¬ГЁ ГЁГ«ГЁ Г§Г­Г ГЄГ Г¬ГЁ ГЇГіГ­ГЄГІГіГ Г¶ГЁГЁ.
+		auto begin = std::sregex_token_iterator{ text.begin(), text.end(), word };  //ГЁГІГҐГ°Г ГІГ®Г° Г¤Г®Г±ГІГіГЇГ  
 		auto end = std::sregex_token_iterator{};
 
 		for (; begin != end; ++begin)
