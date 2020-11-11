@@ -1,12 +1,10 @@
 #include "Game_of_life.h"
 
 Game_of_life::Game_of_life() {
-
+	read_map();
 }
 
 void Game_of_life::read_map() {
-
-	Map_s map;
 
 	std::string nm;
 	std::cout << "enter the name of txt: ";
@@ -51,17 +49,22 @@ void Game_of_life::read_map() {
 		{
 			if (tmp[count] == '*')
 			{
-				map_current[i][j] = 1.0;
+				map_current[i][j] = 1;
 			}
 			else
 			{
-				map_current[i][j] = 0.0;
+				map_current[i][j] = 0;
 			}
 			count++;
 		}
 	}
 
 };
+
+int Game_of_life::get_iterator()
+{
+	return quantity_of_iter;
+}
 
 int Game_of_life::get_me_life()
 {
@@ -70,7 +73,7 @@ int Game_of_life::get_me_life()
 	{
 		for (int j = 0; j < m; j++)
 		{
-			if (map_current[i][j] == 1.0)
+			if (map_current[i][j] == 1)
 			{
 				count++;
 			}
@@ -218,7 +221,7 @@ void Game_of_life::copy_map()
 	}
 }
 
-int Game_of_life::comparator()
+bool Game_of_life::comparator()
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -226,31 +229,13 @@ int Game_of_life::comparator()
 		{
 			if (map_current[i][j] != map_next[i][j])
 			{
-				return -1;
+				return false;
 			}
 		}
 	}
-	return 0;
+	return true;
 }
 
-void Game_of_life::print_map()
-{
-	for (int i = 0; i < n; i++)
-	{
-		for (int j = 0; j < m; j++)
-		{
-			if (map_current[i][j] == 1)
-			{
-				std::cout << '*';
-			}
-			else
-			{
-				std::cout << '_';
-			}
-		}
-		std::cout << endl;
-	}
-}
 
 bool Game_of_life::Interactive_mode()
 {
@@ -262,4 +247,86 @@ bool Game_of_life::Interactive_mode()
 	{
 		return false;
 	}
+}
+
+void Game_of_life::Game()
+{
+	int live_point = -1;
+	int comp = 0;
+	int endCycle = this->get_iterator();
+	int k = 0;
+	do {
+		std::cout << *this;
+		this->copy_map();
+		this->next_generation();
+
+		if (this->comparator())
+		{
+			comp++;
+		}
+		if (comp == 2)
+		{
+			cout << "Game Over ^)" << endl;
+		}
+		live_point = this->get_me_life();
+		if (live_point == 0) {
+			cout << "Plague ((((((((" << endl;
+		}
+		k++;
+	} while (live_point != 0 && comp<2 && k<endCycle);
+}
+
+void Game_of_life::game_interactive()
+{
+	char enter;
+	int live_point = -1;
+	int comp = 0;
+	int k = 0;
+	do {
+		k = 0;
+		cin >> noskipws >> enter;
+		if (enter == '\n') {
+			k = 1;
+			std::cout << *this;
+			this->copy_map();
+			this->next_generation();
+
+			if (this->comparator())
+			{
+				comp++;
+			}
+			if (comp == 2)
+			{
+				cout << "Game Over ^)" << endl;
+			}
+			live_point = this->get_me_life();
+			if (live_point == 0) {
+				cout << "Plague ((((((((" << endl;
+			}
+
+			this->quantity_of_iter++;
+		}
+	} while (k == 1 && comp<2 && live_point != 0);
+}
+
+std::ostream& operator <<(std::ostream& out, const Game_of_life& game) {
+	Map_s map = game.map_current;
+	int n = map.size();
+	int m = map[0].size();
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < m; j++)
+		{
+			if (map[i][j] == 1)
+			{
+				out << '*';
+			}
+			else
+			{
+				out << '_';
+			}
+		}
+		out << endl;
+	}
+	return out;
 }
