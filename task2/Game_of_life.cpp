@@ -6,16 +6,29 @@ Game_of_life::Game_of_life() {
 
 void Game_of_life::read_map() {
 
+	/*char iter;
+	do {
+		std::cout << "enter the quantity of iterations: ";
+		std::cin >> iter;
+		if (isdigit(iter))
+		{
+			break;
+		}
+		
+	} while (true);
+	quantity_of_iter = iter-'0';*/
 	std::string nm;
-	std::cout << "enter the name of txt: ";
-	std::cin >> nm;
-	//int iter = 0;
-	std::cout << "enter the quantity of iterations: ";
-	std::cin >> quantity_of_iter;
-	char name[1000];
-	strcpy_s(name, nm.c_str());
+	std::ifstream file;
+	do {
+		std::cout << "enter the name of txt: ";
+		std::cin >> nm;
+		file.open(nm);
+		if (file.good())
+		{
+			break;
+		}
+	} while (true);
 
-	std::ifstream file(name);
 	std::vector<char> tmp;
 	if (file.is_open())
 	{
@@ -32,15 +45,18 @@ void Game_of_life::read_map() {
 		cout << "sorry :(";
 	}
 
-	map_current.resize(n);
+	std::cout << "enter the quantity of iterations: ";
+	std::cin >> quantity_of_iter;
+
+	map_current->resize(n);
 	for (int i = 0; i < n; i++)
 	{
-		map_current[i].resize(m);
+		(*map_current)[i].resize(m);
 	}
-	map_next.resize(n);
+	(*map_next).resize(n);
 	for (int i = 0; i < n; i++)
 	{
-		map_next[i].resize(m);
+		(*map_next)[i].resize(m);
 	}
 	int count = 0;
 	for (int i = 0; i < n; i++)
@@ -49,11 +65,11 @@ void Game_of_life::read_map() {
 		{
 			if (tmp[count] == '*')
 			{
-				map_current[i][j] = 1;
+				(*map_current)[i][j] = 1;
 			}
 			else
 			{
-				map_current[i][j] = 0;
+				(*map_current)[i][j] = 0;
 			}
 			count++;
 		}
@@ -73,7 +89,7 @@ int Game_of_life::get_me_life()
 	{
 		for (int j = 0; j < m; j++)
 		{
-			if (map_current[i][j] == 1)
+			if ((*map_current)[i][j] == 1)
 			{
 				count++;
 			}
@@ -176,7 +192,7 @@ int Game_of_life::get_live_neighbors(int ii, int jj)
 		{
 			continue;
 		}
-		if (map_next[x][y] == 1) {
+		if ((*map_next)[x][y] == 1) {
 			count++;
 		}
 	}
@@ -185,6 +201,8 @@ int Game_of_life::get_live_neighbors(int ii, int jj)
 
 void Game_of_life::next_generation()
 {
+	*map_current = *map_next;
+
 	int k;
 
 	for (int i = 0; i < n; i++)
@@ -193,33 +211,34 @@ void Game_of_life::next_generation()
 		{
 			k = get_live_neighbors(i, j);
 
-			if (map_next[i][j] == 0)
+			if ((*map_next)[i][j] == 0)
 			{
 				if (k == 3)
 				{
-					map_current[i][j] = 1;
+					(*map_current)[i][j] = 1;
 				}
 			}
 			else {
 				if (k < 2 || k>3)
 				{
-					map_current[i][j] = 0;
+					(*map_current)[i][j] = 0;
 				}
 			}
 		}
 	}
+	
 }
 
-void Game_of_life::copy_map()
+/*void Game_of_life::copy_map()
 {
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < m; j++)
 		{
-			map_next[i][j] = map_current[i][j];
+			(*map_next)[i][j] = (*map_current)[i][j];
 		}
 	}
-}
+}*/
 
 bool Game_of_life::comparator()
 {
@@ -227,7 +246,7 @@ bool Game_of_life::comparator()
 	{
 		for (int j = 0; j < m; j++)
 		{
-			if (map_current[i][j] != map_next[i][j])
+			if ((*map_current)[i][j] != (*map_next)[i][j])
 			{
 				return false;
 			}
@@ -257,7 +276,7 @@ void Game_of_life::Game()
 	int k = 0;
 	do {
 		std::cout << *this;
-		this->copy_map();
+		//this->copy_map();
 		this->next_generation();
 
 		if (this->comparator())
@@ -288,7 +307,7 @@ void Game_of_life::game_interactive()
 		if (enter == '\n') {
 			k = 1;
 			std::cout << *this;
-			this->copy_map();
+			//this->copy_map();
 			this->next_generation();
 
 			if (this->comparator())
@@ -310,7 +329,8 @@ void Game_of_life::game_interactive()
 }
 
 std::ostream& operator <<(std::ostream& out, const Game_of_life& game) {
-	Map_s map = game.map_current;
+	Map_s map = *game.map_current;
+	
 	int n = map.size();
 	int m = map[0].size();
 	for (int i = 0; i < n; i++)
