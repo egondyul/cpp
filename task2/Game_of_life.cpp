@@ -1,6 +1,8 @@
 #include "Game_of_life.h"
 
 Game_of_life::Game_of_life() {
+	map_current = new Map_s;
+	map_next = new Map_s;
 	read_map();
 }
 
@@ -201,10 +203,8 @@ int Game_of_life::get_live_neighbors(int ii, int jj)
 
 void Game_of_life::next_generation()
 {
-	*map_current = *map_next;
-
 	int k;
-
+	*map_next= *map_current;
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < m; j++)

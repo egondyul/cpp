@@ -15,6 +15,7 @@ int main()
 	Game_of_life game;
 	if (game.get_iterator() == 0)
 	{
+
 		game.game_interactive();
 	}
 	else {
