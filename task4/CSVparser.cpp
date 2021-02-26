@@ -5,131 +5,32 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <type_traits>
+/*#include <boost/tokenizer.hpp>
+
 
 using namespace std;
+using namespace boost;
 
-/*template<typename T, typename ...P>
-class CSVIterator
+tokenizer<escaped_list_separator<char> > tk(
+	line, escaped_list_separator<char>('\\', ',', '\"'));
+for (tokenizer<escaped_list_separator<char> >::iterator i(tk.begin());
+	i != tk.end(); ++i)
 {
-private:
-	std::ifstream* file;
-	std::tuple<T, P...> data;
-public:
-	typedef std::input_iterator_tag iterator_category;
-	typedef std::tuple<T, P...> value_type;
-	typedef std::tuple<T, P...>* pointer;
-	typedef std::tuple<T, P...>& reference;
+	vec.push_back(*i);
+}*/
 
-	CSVIterator(std::ifstream& File) :file(File.good() ?&File::NULL) { ++(*this); }
-	CSVIterator() :file(NULL) {}
-
-	//preincrement
-	CSVIterator& operator++() {
-		if (file) { if (!((*file) >> data)) { file = NULL; } } return *this;
-	}
-	//postincrement
-	CSVIterator operator++(int) { CSVIterator tmp(*this); ++(*this); return tmp; }
-	std::tuple<T, P...> const& operator*() const { return data; }
-	std::tuple<T, P...> const* operator->() const {return &data; }
-
-	bool operator== (CSVIterator const& t) { return ((this == &t) || ((this->data == NULL) && (t.data == NULL))); }
-	bool operator!=(CSVIterator const& t) { return !((*this) == t); }
-};
-
-template<typename T, typename ...P>
-class CSVParser
-{
-private:
-	std::ifstream& file;
-public:
-	CSVParser(std::ifstream& t) :file(t) {}
-	CSVIterator begin() const {
-		return CSVIterator{ file };
-	}
-	CSVIterator end() const {return CSVIterator{ };}
-};*/
-
-
-template<size_t I, typename... P>
-struct reader
-{
-	static void read(std::istream& i, std::tuple<P...>& t)
-	{
-		i >> std::get<I>(t);
-		reader<I - 1, P...>::read(i, t);
-	}
-};
-
-template<typename... P>
-struct reader<0, P...>
-{
-	static void read(std::istream& i, std::tuple<P...>& t)
-	{
-		i >> std::get<0>(t);
-	}
-};
-
-template<typename... P>
-void read(std::istream& i, std::tuple<P...>& t)
-{
-	reader<sizeof...(P) - 1, P...>::read(i, t);
+template<class Head, class... Tail>
+std::tuple<Head, Tail...> tuple_read(std::ifstream& is) {
+	Head val;
+	is >> val;
+	if constexpr (sizeof...(Tail) == 0)
+		return std::tuple{ val };
+	else
+		return std::tuple_cat(std::tuple{ val }, tuple_read<Tail...>(is));
 }
 
-class Is_empty
-{
-public:
-	bool empty(std::ifstream& in) const
-	{
-		return in.eof();
-	}
-};
 
-template<typename ...P>
-class CSVparser
-{
-	std::tuple<P...> t;
-	std::ifstream file; //std::move
-	size_t num;
-public:
-	CSVparser< P...>(std::ifstream& f, size_t n)
-	{
-		file = std::move(f);
-		num = n;
-	}
-
-	class iterator
-	{
-		CSVparser* element;
-	public:
-		//using value_type = std::tuple<T, P...>;
-		using reference = const std::tuple< P...>&;
-		//using pointer = const std::tuple<T, P...>*;
-		using iterator_category = std::input_iterator_tag;
-		iterator(CSVparser* elem = nullptr) :element{ elem } {}
-		reference operator*() const { return element->t; }
-		iterator& operator++() { increment(); return *this; }
-		iterator operator++(int) { increment(); return *this; }
-		bool operator == (iterator rhs) const { return element == rhs.element; }
-		bool operator !=(iterator rhs) const { return !(rhs == *this); }
-	protected:
-		void increment()
-		{
-			element->next();
-			if (element->empty())
-			//if(file.eof())
-			{
-				element = nullptr;
-			}
-		}
-		//tuple<P...> operator*();
-	};
-
-
-	iterator begin() { return iterator{ this }; }
-	iterator end() { return iterator{}; }
-	void next() { read<P...>(file, t); }
-	bool empty() const { return file.eof(); }
-};
 
 template<class... Args>
 std::ostream& operator<<(std::ostream& os, std::tuple<Args...> const& t) {
@@ -137,7 +38,7 @@ std::ostream& operator<<(std::ostream& os, std::tuple<Args...> const& t) {
 	std::apply([&os, &first](auto&&... args) {
 		auto print = [&](auto&& val) {
 			if (!first)
-				os << ",";
+				os << "";
 			(os << " " << val);
 			first = false;
 		};
@@ -146,15 +47,100 @@ std::ostream& operator<<(std::ostream& os, std::tuple<Args...> const& t) {
 	return os;
 }
 
+struct comma
+{
+	char com = ',';
+};
+
+template<class Head, class... Args>
+std::ifstream& operator>>(std::ifstream& is, std::tuple<Head, Args...> &tup) {
+	//is.imbue(std::locale(std::locale(), ','));
+	tup = tuple_read<Head, Args...>(is);
+	return is;
+}
+
+template<class...P>
+class csvIterator
+{
+private:
+	std::ifstream* in;
+	std::tuple<P...> t;
+public:
+	typedef std::input_iterator_tag iteratir_category;
+	typedef std::tuple<P...> value;
+	typedef std::size_t it;
+	typedef std::tuple<P...>* pointer;
+	typedef std::tuple<P...>& reference;
+
+	csvIterator(std::ifstream& file) :in(file.good() ? &file : NULL) { ++(*this); }
+	csvIterator():in(NULL){}
+
+	//pre increment
+	csvIterator& operator++(){
+		if(in)
+		{
+			if (!((*in) >> t))
+			{
+				in = NULL;
+			}
+		}
+		return *this;
+	}
+	//post increment
+	csvIterator operator++(int) {
+		csvIterator tmp(*this);
+		++(*this);
+		return tmp;
+	}
+	std::tuple<P...> const& operator*() const
+	{
+		return t;
+	}
+	std::tuple<P...>* operator->()const 
+	{
+		return &t;
+	}
+
+	bool operator==(csvIterator const& rhs)
+	{
+		return ((this == &rhs) || ((this->in == NULL) && (rhs.in == NULL)));
+	}
+	bool operator!=(csvIterator const& rhs)
+	{
+		return !((*this) == rhs);
+	}
+};
+
+template<class...P>
+class CSVParser
+{
+	std::ifstream& stream;
+public:
+	CSVParser(std::ifstream& str):stream(str){}
+	csvIterator<P...> begin()const {
+		return csvIterator<P...>{ stream };
+	}
+	csvIterator<P...> end()const {
+		return csvIterator<P...>{ };
+	}
+};
+
 int main()
 {
 	std::ifstream file("test.csv");
-	CSVparser<int,int,double> parser(file,0);
-	for (std::tuple<int, int, double> rs : parser)
+	/*std::tuple<int, string, string> t2;
+	while (file >> t2)
+	{
+		std::cout << t2 << std::endl;
+	}*/
+	/*std::cout << endl;
+	for (csvIterator<int,string,string> loop(file); loop != csvIterator<int,string, string>(); ++loop)
+	{
+		std::cout << (*loop) << endl;
+	}*/
+	CSVParser<int, std::string, std::string> parser (file);
+	for (std::tuple<int, std::string, std::string>rs : parser)
 	{
 		std::cout << rs << std::endl;
 	}
 }
-
-
-
