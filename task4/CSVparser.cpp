@@ -7,6 +7,9 @@
 #include <string>
 #include <type_traits>
 #include <algorithm>
+#include<sstream>
+#include<exception>
+
 /*#include <boost/tokenizer.hpp>
 
 
@@ -47,38 +50,58 @@ tuple<Targs...> SimpleCSVParser<Targs...>::iterator::operator*() {
 }*/
 
 template<class Head, class... Tail>
-std::tuple<Head, Tail...> tuple_read(std::ifstream& is) {
+std::tuple<Head, Tail...> tuple_read(std::ifstream& is, char comma,char display) {
 	Head val;
 	char tmp;
-	if (is.peek() == ',')
+	int row_tmp = sizeof...(Tail)+1;//количество пустых €чеек в tuple
+	if (is.peek() == comma)
 	{
 		is >> tmp;
+	}
+	if (is.peek() == '\n')
+	{
+		if (row_tmp != 0)
+		{
+			std::cout << "We have TROUBLE here" << std::endl;
+	
+		}
+	}
 		is >> val;
 		if constexpr (std::is_same_v<Head, std::string>)
 		{
-			val.erase(std::remove(val.begin(), val.end(), ','), val.end());
+			size_t t = 0;
+			Head tmp_val;
+
+			for (const auto& i : val)
+			{
+				if (i == display)
+				{
+					t++;
+				}
+				tmp_val += i;
+				if (t == 2)
+				{
+					break;
+				}
+			}
+			val = tmp_val;
+			//val.erase(std::remove(val.begin(), val.end(), comma), val.end());
+			//val.erase(std::remove(val.begin(), val.end(), '"'), val.end());
 		}
 		if constexpr (sizeof...(Tail) == 0)
+		{
 			return std::tuple{ val };
+		}
 		else
-			return std::tuple_cat(std::tuple{ val }, tuple_read<Tail...>(is));
-
-	}
-	else
-	{
-		is >> val;
-		if constexpr (sizeof...(Tail) == 0)
-			return std::tuple{ val };
-		else
-			return std::tuple_cat(std::tuple{ val }, tuple_read<Tail...>(is));
-
-	}
-	//is.imbue(std::locale(std::locale(), new commasep));
-
+		{
+			return std::tuple_cat(std::tuple{ val }, tuple_read<Tail...>(is, comma, display));
+		}
+	
 }
 
 template<class... Args>
 std::ostream& operator<<(std::ostream& os, std::tuple<Args...> const& t) {
+	
 	std::apply([&os](auto&&... args) {
 		auto print = [&](auto&& val) {
 			os << " " << val;
@@ -91,7 +114,9 @@ std::ostream& operator<<(std::ostream& os, std::tuple<Args...> const& t) {
 template<class Head, class... Args>
 std::ifstream& operator>>(std::ifstream& is, std::tuple<Head, Args...> &tup) {
 	//is.imbue(std::locale(std::locale(), ','));
-	tup = tuple_read<Head, Args...>(is);
+	char comma = ',';
+	char display = '"';
+	tup = tuple_read<Head, Args...>(is,comma,display);
 	return is;
 }
 
@@ -101,6 +126,8 @@ class csvIterator
 private:
 	std::ifstream* in;
 	std::tuple<P...> t;
+	size_t column=0;
+	size_t row=0;
 public:
 	typedef std::input_iterator_tag iterator_category;
 	typedef std::tuple<P...> value;
@@ -109,11 +136,22 @@ public:
 	typedef std::tuple<P...>& reference;
 
 	csvIterator(std::ifstream& file,size_t n) :in(file.good() ? &file : NULL) { 
-		++(*this);
-		while (n > 0)
-		{
-			--n;
+		
+		try {
+			if (!in)
+			{
+				throw std::exception("error");
+			}
 			++(*this);
+			while (n > 0)
+			{
+				--n;
+				++(*this);
+			}
+		}
+		catch (std::exception e)
+		{
+			std::cout << e.what();
 		}
 	}
 
@@ -121,14 +159,16 @@ public:
 
 	//pre increment
 	csvIterator& operator++(){
-		if(in)
-		{
 			if (!((*in) >> t))
 			{
 				in = NULL;
 			}
-		}
-		return *this;
+			else
+			{
+				row++;
+			}
+			return *this;
+		
 	}
 	//post increment
 	csvIterator operator++(int) {
@@ -177,21 +217,25 @@ public:
 
 int main()
 {
-	std::ifstream file("test.csv");
-	/*std::tuple<int, string, string> t2;
-	while (file >> t2)
-	{
-		std::cout << t2 << std::endl;
-	}*/
-	/*std::cout << std::endl;
-	for (csvIterator<int,std::string,std::string> loop(file); loop != csvIterator<int,std::string, std::string>(); ++loop)
-	{
-		std::cout << (*loop) << std::endl;
-	}*/
-	
-	CSVParser<int, std::string, std::string> parser (file,0);
-	for (std::tuple<int, std::string, std::string>rs : parser)
-	{
-		std::cout << rs << std::endl;
-	}
+		std::ifstream file("test.csv");
+		/*std::tuple<int, string, string> t2;
+		while (file >> t2)
+		{
+			std::cout << t2 << std::endl;
+		}*/
+
+		/*for (csvIterator<int,std::string,std::string> loop(file); loop != csvIterator<int,std::string, std::string>(); ++loop)
+		{
+			std::cout << (*loop) << std::endl;
+		}*/
+
+		CSVParser<int, std::string, std::string> parser(file, 0);
+		for (std::tuple<int, std::string, std::string>rs : parser)
+		{
+			std::cout << rs << std::endl;
+		}
 }
+
+
+
+
