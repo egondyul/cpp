@@ -2,8 +2,7 @@
 
 void Huff::input()
 {
-	if (code_decode == "c")
-	{
+	do {
 		std::ifstream file(in, ios::binary);
 		if (file)
 		{
@@ -12,17 +11,17 @@ void Huff::input()
 				char c = file.get();
 				text[c]++;
 			}
+			file.close();
+			break;
 		}
 		else
 		{
 			std::cout << "Sorry, file is not open" << std::endl;
+			std::cout << "try again: ";
+			std::cin >> in;
 		}
-		file.close();
-	}
-	else if (code_decode == "d")
-	{
-	
-	}
+	} while (true);
+
 }
 
 void Huff::freq_map()
@@ -91,7 +90,7 @@ void Huff::output(std::vector<bool>& boo)
 	while (!infile.eof())
 	{
 		char c = infile.get();
-		boo = alphabet[static_cast<char>(c)];
+		boo = alphabet[c];
 		for (int i = 0; i < boo.size(); i++)
 		{
 			buf = buf | boo[i] << (7 - count);
@@ -112,11 +111,6 @@ void Huff::output(std::vector<bool>& boo)
 void Huff::c_key()
 {
 	std::ofstream outfile("key.txt", std::ios::binary);
-	/*Map::iterator it = text.begin(), end = text.end();
-	for (; it != end; ++it)
-	{
-		outfile << it->first << '\t' << it->second << 'endl';
-	}*/
 	if (outfile.is_open())
 	{
 		auto&& index{ text.begin() };
@@ -131,11 +125,12 @@ void Huff::c_key()
 				outfile.put(' ');
 			}
 		} while (index != text.end());
+		outfile.put(' ');
 		outfile.close();
 	}
 	else
 	{
-		std::cout << "sorry";
+		std::cout << "sorry, smt wrong";
 	}
 }
 
@@ -145,9 +140,13 @@ void Huff::decode()
 {
 	d_key();
 	//input();
-	//uptr root = make_tree();
+	freq_map();
+   	uptr root = make_tree();
+	std::string decodedcontent;
+	decodedcontent.reserve(decoded_size(text));
+	for_decode(root, decodedcontent);
 
-}
+ }
 
 std::string Huff:: readFile(const std::string& fileName) {
 	std::ifstream f(fileName);
@@ -158,25 +157,79 @@ std::string Huff:: readFile(const std::string& fileName) {
 
 void Huff :: d_key()
 {
-	//std::string txt=readFile("key.txt");
-	/*std::ifstream file("key.txt", std::ios::binary);
-	std::stringstream ss;
-	std::string txt;
-	if (file.is_open())
+	char buff = 0;
+	std::string freq;
+	std::string content = readFile("key.txt");
+	for (std::size_t i{}; i < content.length(); ++i)
 	{
-		ss << file.rdbuf();
-		txt.str();
+		buff = content[i];
+		i += 2;
+		do
+		{
+			freq += content[i];
+			++i;
+		} while ((content[i] != ' ') && (content[i] != '.'));
+		text[buff] = static_cast<unsigned int>(std::stoi(freq));
+		freq.clear();
 	}
-	else
-	{
-		std::cout << "sorry";
-	}*/
+	content.clear();
+	content.shrink_to_fit();
 
-	std::ifstream file("key.txt");
-	char key;
-	std::size_t frequency;
-	while (file >> key >> frequency)
+}
+
+void Huff::for_decode(uptr const& root, std::string& decodedcontent)
+{
+	ifstream outfile(out, std::ios::binary);
+
+	Node* tmp = root.get();
+	int offset = 0; 
+	int byte = outfile.get();
+	while (!outfile.eof())
 	{
-		text[key] = frequency;
+ 		if (byte & (1 << (7 - offset)))
+		{
+			tmp=tmp->_right.get();
+		}
+		else
+		{
+			tmp=tmp->_left.get();
+		}
+
+		if (tmp->_left==nullptr && tmp->_right==nullptr)
+		{
+			decodedcontent += tmp->_data;
+			tmp = root.get();
+		}
+		offset++;
+		if (offset == 8)
+		{
+			offset = 0;
+			byte = outfile.get();
+		}
 	}
+	outfile.close();
+
+	do {
+		std::ofstream outFile(in, std::ios::binary);
+		if (outFile.is_open()) {
+			outFile.write(&decodedcontent[0], static_cast<std::streamsize>(decodedcontent.size()));
+			outFile.close();
+			break;
+		}
+		else {
+			std::cout << "output file didn't open for some reason";
+			std::cout << "try again: ";
+			std::cin >> in;
+		}
+	} while (true);
+}
+
+std::size_t Huff::decoded_size(const Map& map)
+{
+	std::size_t tmp = 0;
+	for (const auto& i : map)
+	{
+		tmp += i.second;
+	}
+	return tmp;
 }
