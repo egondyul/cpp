@@ -30,15 +30,34 @@ private:
 		std::size_t _frequency;
 		char _data;
 
-		Node() = default;
+		Node():_left(nullptr), _right(nullptr) {};
 		Node(uptr left, uptr right) : _left{ std::move(left) },
 			_right{ std::move(right) } {
 			_frequency = _left->_frequency + _right->_frequency;
 		}
 
+		Node(const Node& node):_frequency(node._frequency), _data(node._data)
+		{
+			_left.reset(new Node(*node._left));
+			_right = std::make_unique<Node>(*node._right);
+
+		}
+
+		/*Node(const Node& node)
+		{
+			Node* left_tmp = node._left.get();
+			_left = make_unique<Node>(left_tmp);
+
+			Node* right_tmp = node._right.get();
+			_right = make_unique<Node>(right_tmp);
+
+			_frequency = node._frequency;
+			_data = node._data;
+		}*/
 
 		/*uptr copy_unique(Node *node)
 		{
+
 			auto ptr = std::make_unique<Node>(*node);
 			return ptr;
 		}*/
@@ -79,8 +98,27 @@ public:
 
 	~Huff(){}
 
-	Huff(const Huff& huffman) = delete;
+	//Huff(const Huff& huffman) = delete;
 	Huff& operator = (const Huff& huffman) = delete;
+
+	Huff(const Huff& huffman) :
+		code_decode(huffman.code_decode), in(huffman.in), out(huffman.out), text(huffman.text), alphabet(huffman.alphabet)
+	{
+		/*for (int i = 0; i < huffman.ptrData.size(); i++)
+		{
+			Node* tmp = huffman.ptrData[i].get();
+
+			ptrData[i] = make_unique<Node>(tmp);
+			//ptrData[i] = copy_unique(huffman.ptrData[i].get());
+		}*/
+
+		std::deque<std::unique_ptr<Node>> tmp;
+		ptrData.resize(huffman.ptrData.size());
+		for (const auto& e : huffman.ptrData)
+		{
+			ptrData.push_back(std::make_unique<Node>(*e));
+		}
+	}
 
 	Huff(Huff&& huffman) noexcept
 	{
@@ -131,7 +169,8 @@ private:
 	Map text; // <char, frequency>
 	std::deque<uptr> ptrData; //дек указателей (дерево)
 	Abc alphabet;
-	
+	std::vector<std::unique_ptr<int>>temp;
+
 	std::string code_decode;
 	std::string in;
 	std::string out;
